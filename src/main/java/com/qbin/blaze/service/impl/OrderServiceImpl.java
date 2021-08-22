@@ -1,7 +1,9 @@
 package com.qbin.blaze.service.impl;
 
 import com.qbin.blaze.models.Order;
+import com.qbin.blaze.models.OrderDetail;
 import com.qbin.blaze.repository.IOrderDao;
+import com.qbin.blaze.repository.IOrderDetailDao;
 import com.qbin.blaze.service.IOrderService;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
@@ -14,6 +16,9 @@ public class OrderServiceImpl implements IOrderService {
 
     @Autowired
     private IOrderDao orderDao;
+
+    @Autowired
+    private IOrderDetailDao orderDetailDao;
 
     @Override
     @Transactional(readOnly = true)
@@ -30,5 +35,22 @@ public class OrderServiceImpl implements IOrderService {
     @Override
     @Transactional
     public void deleteOrder(String id) { orderDao.deleteById(id); }
+
+    @Override
+    @Transactional(readOnly = true)
+    public Order getOrderById(String id) {
+        return orderDao.findById(id).orElse(null);
+    }
+
+    @Override
+    @Transactional
+    public OrderDetail createOrderDetail(OrderDetail orderDetail) {
+        return orderDetailDao.insert(orderDetail);
+    }
+
+    @Override
+    public void deleteOrderDetail(String id) {
+        orderDetailDao.deleteById(id);
+    }
 
 }

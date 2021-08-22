@@ -36,7 +36,7 @@ public class Order {
     private Float totalAmount;
 
     @DBRef(lazy = true)
-    private List<Product> products;
+    private List<OrderDetail> orderDetails;
 
     //Getters and setters
     public String get_id() {
@@ -115,14 +115,6 @@ public class Order {
         this.totalAmount = totalAmount;
     }
 
-    public List<Product> getProducts() {
-        return products;
-    }
-
-    public void setProducts(List<Product> products) {
-        this.products = products;
-    }
-
     public Float getTotalFederalTax() {
         return totalFederalTax;
     }
@@ -137,5 +129,13 @@ public class Order {
 
     public void setStatus(String status) {
         this.status = status;
+    }
+
+    public List<OrderDetail> getOrderDetails() {
+        return orderDetails;
+    }
+
+    public void setOrderDetails(List<OrderDetail> orderDetails) {
+        this.orderDetails = orderDetails;
     }
 }

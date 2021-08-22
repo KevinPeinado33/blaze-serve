@@ -1,6 +1,9 @@
 package com.qbin.blaze.controllers;
 
+import com.qbin.blaze.dto.OrderDto;
+import com.qbin.blaze.dto.ProductDto;
 import com.qbin.blaze.models.Order;
+import com.qbin.blaze.models.OrderDetail;
 import com.qbin.blaze.models.Product;
 import com.qbin.blaze.repository.IProductDao;
 import com.qbin.blaze.service.IOrderService;
@@ -11,10 +14,7 @@ import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
-import java.util.Date;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
+import java.util.*;
 
 @RestController
 @CrossOrigin({"*"})
@@ -33,9 +33,14 @@ public class OrderController {
     }
 
     @PostMapping("/create")
-    public ResponseEntity<?> create( @RequestBody Order order ) {
+    public ResponseEntity<?> create( @RequestBody OrderDto order ) {
+
+        // we create a list of details to store some data
+        List<OrderDetail> orderDetails = new ArrayList<OrderDetail>(1);
 
         Map<String, Object> responses = new HashMap<>();
+
+        Order orderCreate = new Order();
 
         Order newOrder = null;
 
@@ -48,53 +53,67 @@ public class OrderController {
 
         }
 
-        // calculate subtotal
-        float subTotal = 0.0f;
-
-        for ( Product product: order.getProducts() ) {
-
-            Product productFound = productService.findProductById(product.get_id());
-
-            subTotal = subTotal + productFound.getPrice();
-
-        }
-
-        order.setSubTotal(subTotal);
-
-        // calculate all taxes
-        float totalCityTax    = (float) ( subTotal * 0.10 );
-
-        subTotal = subTotal + totalCityTax;
-
-        float totalCountryTax = (float) ( subTotal * 0.05 );
-
-        subTotal = subTotal + totalCountryTax;
-
-        float totalStateTax   = (float) ( subTotal * 0.08 );
-
-        subTotal = subTotal + totalStateTax;
-
-        float totalFederalTax = (float) ( subTotal * 0.02 );
-
-        // set data an order
-        order.setNumOrder("ORD-"+(int) (Math.random()*10+1));
-
-        order.setStatus("Pending");
-
-        order.setDate(new Date());
-
-        order.setTotalCityTax(totalCityTax);
-        order.setTotalCountyTax(totalCountryTax);
-        order.setTotalStateTax(totalStateTax);
-        order.setTotalFederalTax(totalFederalTax);
-
-        order.setTotalTaxes( totalCityTax + totalCountryTax + totalStateTax + totalFederalTax );
-
-        order.setTotalAmount( order.getSubTotal() + order.getTotalTaxes() );
-
         try {
 
-            newOrder = orderService.createOrder(order);
+            // calculate subtotal
+            float subTotal = 0.0f;
+
+            // we go through the product list
+            for ( ProductDto product: order.getProducts() ) {
+
+                OrderDetail orderDetail = new OrderDetail();
+
+                // we search for products by id to fill in some missing data
+                Product productFound = productService.findProductById(product.get_id());
+
+                // we calculate the subtotal
+                subTotal = subTotal + ( productFound.getPrice() * product.getQuantity() );
+
+                // we fill in the necessary data for the detail object
+                orderDetail.setQuantity(product.getQuantity());
+                orderDetail.setProduct(productFound);
+                orderDetail.setCost(productFound.getPrice() * product.getQuantity());
+
+                // we create the order detail and set the object that is returned to us
+                orderDetails.add(orderService.createOrderDetail(orderDetail));
+
+            }
+
+            // we fill the subtotal at this level since the value is modified below.
+            orderCreate.setSubTotal(subTotal);
+
+            // calculate all taxes
+            float totalCityTax    = (float) ( subTotal * 0.10 );
+
+            subTotal = subTotal + totalCityTax;
+
+            float totalCountryTax = (float) ( subTotal * 0.05 );
+
+            subTotal = subTotal + totalCountryTax;
+
+            float totalStateTax   = (float) ( subTotal * 0.08 );
+
+            subTotal = subTotal + totalStateTax;
+
+            float totalFederalTax = (float) ( subTotal * 0.02 );
+
+            // set data an order
+            orderCreate.setConsumer(order.getConsumer());
+            orderCreate.setNumOrder("ORD-"+(int) (Math.random()*10+1));
+            orderCreate.setStatus("Pending");
+            orderCreate.setDate(new Date());
+            orderCreate.setTotalCityTax(totalCityTax);
+            orderCreate.setTotalCountyTax(totalCountryTax);
+            orderCreate.setTotalStateTax(totalStateTax);
+            orderCreate.setTotalFederalTax(totalFederalTax);
+            orderCreate.setOrderDetails(orderDetails);
+
+            orderCreate.setTotalTaxes( totalCityTax + totalCountryTax + totalStateTax + totalFederalTax );
+
+            orderCreate.setTotalAmount( orderCreate.getSubTotal() + orderCreate.getTotalTaxes() );
+
+            // finally create order
+            newOrder = orderService.createOrder(orderCreate);
 
         } catch ( DataAccessException exception ) {
 
@@ -118,8 +137,20 @@ public class OrderController {
 
         Map<String, Object> responses = new HashMap<>();
 
+        // we obtain all the details of this order
+        Order order = orderService.getOrderById(id);
+
         try {
 
+            // we remove all details of this order
+            for ( OrderDetail orderDetail: order.getOrderDetails() ){
+
+                // delete order detail by id
+                orderService.deleteOrderDetail(orderDetail.get_id());
+
+            }
+
+            // we finally eliminated the order
             orderService.deleteOrder(id);
 
         } catch ( DataAccessException exception ) {
@@ -135,6 +166,29 @@ public class OrderController {
 
         return new ResponseEntity<Map<String, Object>>(responses, HttpStatus.OK);
 
+    }
+
+    @DeleteMapping("/delete-order-detail")
+    public ResponseEntity<?> deleteOrderDetail(@RequestParam(value = "idDetail") String idDetail) {
+
+        Map<String, Object> responses = new HashMap<>();
+
+        try {
+
+            orderService.deleteOrderDetail(idDetail);
+
+        } catch ( DataAccessException exception ) {
+
+            responses.put("mesage", "Error deleting order detail from database.");
+            responses.put("error", exception.getMessage() + ": " + exception.getMostSpecificCause().getMessage());
+
+            return new ResponseEntity<Map<String, Object>>(responses, HttpStatus.INTERNAL_SERVER_ERROR);
+
+        }
+
+        responses.put("mesage", "Order detail successfully removed from the database.");
+
+        return new ResponseEntity<Map<String, Object>>(responses, HttpStatus.OK);
     }
 
 }

@@ -4,9 +4,7 @@ import org.springframework.data.annotation.Id;
 import org.springframework.data.mongodb.core.mapping.DBRef;
 import org.springframework.data.mongodb.core.mapping.Document;
 
-import java.util.List;
-
-@Document("orders")
+@Document("orders_detail")
 public class OrderDetail {
 
     @Id
@@ -17,10 +15,7 @@ public class OrderDetail {
     private Float cost;
 
     @DBRef(lazy = true)
-    private List<Order> orders;
-
-    @DBRef(lazy = true)
-    private List<Product> products;
+    private Product product;
 
     // Getters and setters
     public String get_id() {
@@ -43,20 +38,11 @@ public class OrderDetail {
         this.cost = cost;
     }
 
-    public List<Order> getOrders() {
-        return orders;
+    public Product getProduct() {
+        return product;
     }
 
-    public void setOrders(List<Order> orders) {
-        this.orders = orders;
+    public void setProduct(Product product) {
+        this.product = product;
     }
-
-    public List<Product> getProducts() {
-        return products;
-    }
-
-    public void setProducts(List<Product> products) {
-        this.products = products;
-    }
-
 }
