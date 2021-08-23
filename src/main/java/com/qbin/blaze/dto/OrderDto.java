@@ -8,6 +8,8 @@ public class OrderDto {
 
     private String consumer;
 
+    private String status;
+
     private List<ProductDto> products;
 
     public String get_id() {
@@ -24,6 +26,14 @@ public class OrderDto {
 
     public void setConsumer(String consumer) {
         this.consumer = consumer;
+    }
+
+    public String getStatus() {
+        return status;
+    }
+
+    public void setStatus(String status) {
+        this.status = status;
     }
 
     public List<ProductDto> getProducts() {

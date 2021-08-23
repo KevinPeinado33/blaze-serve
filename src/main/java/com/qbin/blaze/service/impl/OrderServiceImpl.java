@@ -49,8 +49,15 @@ public class OrderServiceImpl implements IOrderService {
     }
 
     @Override
+    @Transactional
     public void deleteOrderDetail(String id) {
         orderDetailDao.deleteById(id);
+    }
+
+    @Override
+    @Transactional
+    public Order updateOrder(Order order) {
+        return orderDao.save(order);
     }
 
 }

@@ -19,4 +19,6 @@ public interface IOrderService {
 
     void deleteOrderDetail(String id);
 
+    Order updateOrder(Order order);
+
 }
