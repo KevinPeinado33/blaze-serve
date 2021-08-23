@@ -14,10 +14,10 @@ import springfox.documentation.swagger2.annotations.EnableSwagger2;
 public class BlazeServeApplication {
 
 	@Bean
-	public Docket blazeApi() {
+	public Docket api() {
 		return new Docket(DocumentationType.SWAGGER_2)
 				.select()
-					.apis(RequestHandlerSelectors.any())
+					.apis(RequestHandlerSelectors.basePackage("com.qbin.blaze.controllers"))
 					.paths(PathSelectors.any())
 					.build();
 	}
